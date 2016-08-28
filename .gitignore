@@ -1,0 +1,6 @@
+main
+main.o
+
+test.qhex
+test.qbin
+test.qasm2
