@@ -1,0 +1,157 @@
+;#
+;# Copyright (c) 2016 Sugizaki Yukimasa
+;# All rights reserved.
+;#
+;# This software is licensed under a Modified (3-Clause) BSD License.
+;# You should have received a copy of this license along with this
+;# software. If not, contact the copyright holder above.
+;#
+
+;# REG_ASSIGN(MACRO_TO_ASSIGN, CNT_BASENAME, REG_PREFIX)
+define(`REG_ASSIGN',`
+	ifelse(`$#', `3', , `
+		errprint(`$0: Invalid the number of the aguments')
+		m4exit(`1')
+	')
+	ifelse(`$1', `', `
+		errprint(`$0: Empty macro name')
+		m4exit(`1')
+	')
+	ifelse(`$2', `', `
+		errprint(`$0: Empty suffix')
+		m4exit(`1')
+	')
+	ifelse(`$3', `', `
+		errprint(`$0: Empty suffix')
+		m4exit(`1')
+	')
+	ifdef(`$2_CNT', , `define(`$2_CNT', `0')')
+	ifelse(eval($2_CNT >= 32), `1', `
+		errprint(`$0: Register spilled')
+		m4exit(`1')
+	')
+	define(`$1', `$3'$2_CNT)
+	define(`$2_CNT', incr($2_CNT))
+')
+
+;# R_ASSIGN(MACRO_TO_ASSIGN)
+define(`R_ASSIGN', `REG_ASSIGN($1, R, r)')
+
+;# RA_ASSIGN(MACRO_TO_ASSIGN)
+define(`RA_ASSIGN', `REG_ASSIGN($1, RA, ra)')
+
+;# RB_ASSIGN(MACRO_TO_ASSIGN)
+define(`RB_ASSIGN', `REG_ASSIGN($1, RB, rb)')
+
+R_ASSIGN(TMP0_R)
+R_ASSIGN(TMP1_R)
+RA_ASSIGN(V_0_RA)
+RA_ASSIGN(V_1_RA)
+RA_ASSIGN(V_2_RA)
+RA_ASSIGN(V_3_RA)
+RA_ASSIGN(V_4_RA)
+RA_ASSIGN(V_5_RA)
+RA_ASSIGN(V_6_RA)
+RA_ASSIGN(V_7_RA)
+RA_ASSIGN(V_8_RA)
+RA_ASSIGN(V_9_RA)
+RA_ASSIGN(V_10_RA)
+RA_ASSIGN(V_11_RA)
+RA_ASSIGN(V_12_RA)
+RA_ASSIGN(V_13_RA)
+RA_ASSIGN(V_14_RA)
+RA_ASSIGN(V_15_RA)
+RA_ASSIGN(VPM_ADDR_RA)
+
+changequote(`[', `]')
+
+alu cond_add=al op_add=or waddr_add=VPM_ADDR_RA raddr_a=uniform_read add_a=ra add_b=ra
+
+;                                                + DMA store setup
+;                                                |  + units = 16
+;                                                |  |       + depth = 16
+;                                                |  |       |         + 0:vert 1:horiz
+;                                                |  |       |         |  + vpmbase_y = 0
+;                                                |  |       |         |  |       + vpmbase_x = 0
+;                                                |  |       |         |  |       |     + width = 32bit
+li cond_mul=al waddr_mul=vpmvcd_wr_setup imm=`0b_10_0010000_0010000_0_1__0000000_0000__000`
+
+;                                                + DMA load setup
+;                                                | + width = 32bit
+;                                                | |   + mpitch: 
+;                                                | |   |    + rowlen = 16
+;                                                | |   |    |    + nrows = 16
+;                                                | |   |    |    |    + vpitch = 1
+;                                                | |   |    |    |    |    + 0:horiz 1:vert
+li cond_add=al waddr_add=vpmvcd_rd_setup imm=`0b_1_000_0011_0000_0000_0001_0__0_000000_0000`
+
+
+; vpm_ld_addr = VPM_ADDR_RA
+alu cond_add=al op_add=or waddr_add=vpm_ld_addr raddr_a=VPM_ADDR_RA add_a=ra add_b=ra
+; Read vpm_ld_wait
+alu cond_add=al op_add=or raddr_a=vpm_ld_wait add_a=ra add_b=ra
+
+;                                                + VPM read setup
+;                                                |         + num = 16
+;                                                |         |       + stride = 1
+;                                                |         |       |      + 0:vert 1:horiz
+;                                                |         |       |      |   + size = 32bit
+li cond_add=al waddr_add=vpmvcd_rd_setup imm=`0b_00_000000_0000_00_000001_1_0_10__00_00_0000`
+
+;                                                + VPM write setup
+;                                                |               + stride = 1
+;                                                |               |      + 0:vert 1:horiz
+;                                                |               |      |   + size = 32bit
+;                                                |               |      |   |      + addr_y = 0
+;                                                |               |      |   |      |  + addr_x = 0
+li cond_mul=al waddr_mul=vpmvcd_wr_setup imm=`0b_00_000000000000_000001_1_0_10__00_00_0000`
+
+
+alu cond_add=al op_add=or waddr_add=V_0_RA raddr_a=vpm_read add_a=ra add_b=ra
+alu cond_add=al op_add=or waddr_add=V_1_RA raddr_a=vpm_read add_a=ra add_b=ra
+alu cond_add=al op_add=or waddr_add=V_2_RA raddr_a=vpm_read add_a=ra add_b=ra
+alu cond_add=al op_add=or waddr_add=V_3_RA raddr_a=vpm_read add_a=ra add_b=ra
+alu cond_add=al op_add=or waddr_add=V_4_RA raddr_a=vpm_read add_a=ra add_b=ra
+alu cond_add=al op_add=or waddr_add=V_5_RA raddr_a=vpm_read add_a=ra add_b=ra
+alu cond_add=al op_add=or waddr_add=V_6_RA raddr_a=vpm_read add_a=ra add_b=ra
+alu cond_add=al op_add=or waddr_add=V_7_RA raddr_a=vpm_read add_a=ra add_b=ra
+alu cond_add=al op_add=or waddr_add=V_8_RA raddr_a=vpm_read add_a=ra add_b=ra
+alu cond_add=al op_add=or waddr_add=V_9_RA raddr_a=vpm_read add_a=ra add_b=ra
+alu cond_add=al op_add=or waddr_add=V_10_RA raddr_a=vpm_read add_a=ra add_b=ra
+alu cond_add=al op_add=or waddr_add=V_11_RA raddr_a=vpm_read add_a=ra add_b=ra
+alu cond_add=al op_add=or waddr_add=V_12_RA raddr_a=vpm_read add_a=ra add_b=ra
+alu cond_add=al op_add=or waddr_add=V_13_RA raddr_a=vpm_read add_a=ra add_b=ra
+alu cond_add=al op_add=or waddr_add=V_14_RA raddr_a=vpm_read add_a=ra add_b=ra
+alu cond_add=al op_add=or waddr_add=V_15_RA raddr_a=vpm_read add_a=ra add_b=ra
+
+alu cond_add=al op_add=fmin waddr_add=vpm_write unpack=8a32 raddr_a=V_0_RA add_a=ra add_b=ra
+alu cond_add=al op_add=fmin waddr_add=vpm_write unpack=8a32 raddr_a=V_1_RA add_a=ra add_b=ra
+alu cond_add=al op_add=fmin waddr_add=vpm_write unpack=8a32 raddr_a=V_2_RA add_a=ra add_b=ra
+alu cond_add=al op_add=fmin waddr_add=vpm_write unpack=8a32 raddr_a=V_3_RA add_a=ra add_b=ra
+alu cond_add=al op_add=fmin waddr_add=vpm_write unpack=8a32 raddr_a=V_4_RA add_a=ra add_b=ra
+alu cond_add=al op_add=fmin waddr_add=vpm_write unpack=8a32 raddr_a=V_5_RA add_a=ra add_b=ra
+alu cond_add=al op_add=fmin waddr_add=vpm_write unpack=8a32 raddr_a=V_6_RA add_a=ra add_b=ra
+alu cond_add=al op_add=fmin waddr_add=vpm_write unpack=8a32 raddr_a=V_7_RA add_a=ra add_b=ra
+alu cond_add=al op_add=fmin waddr_add=vpm_write unpack=8a32 raddr_a=V_8_RA add_a=ra add_b=ra
+alu cond_add=al op_add=fmin waddr_add=vpm_write unpack=8a32 raddr_a=V_9_RA add_a=ra add_b=ra
+alu cond_add=al op_add=fmin waddr_add=vpm_write unpack=8a32 raddr_a=V_10_RA add_a=ra add_b=ra
+alu cond_add=al op_add=fmin waddr_add=vpm_write unpack=8a32 raddr_a=V_11_RA add_a=ra add_b=ra
+alu cond_add=al op_add=fmin waddr_add=vpm_write unpack=8a32 raddr_a=V_12_RA add_a=ra add_b=ra
+alu cond_add=al op_add=fmin waddr_add=vpm_write unpack=8a32 raddr_a=V_13_RA add_a=ra add_b=ra
+alu cond_add=al op_add=fmin waddr_add=vpm_write unpack=8a32 raddr_a=V_14_RA add_a=ra add_b=ra
+alu cond_add=al op_add=fmin waddr_add=vpm_write unpack=8a32 raddr_a=V_15_RA add_a=ra add_b=ra
+
+; vpm_st_addr = VPM_ADDR_RA
+alu cond_add=al op_add=or waddr_add=vpm_st_addr ws=1 raddr_a=VPM_ADDR_RA add_a=ra add_b=ra
+; Read vpm_st_wait
+alu cond_add=al op_add=or raddr_b=vpm_st_wait add_a=rb add_b=rb
+
+alu cond_add=al op_add=or waddr_add=host_int sig=simm simm=1 add_a=rb add_b=rb
+alu sig=pe
+alu
+alu
+
+; Stats:
+;  [R_CNT] = R_CNT
+;  [RA_CNT] = RA_CNT
+;  [RB_CNT] = RB_CNT
